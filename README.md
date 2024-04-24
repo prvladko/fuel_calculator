@@ -1,21 +1,21 @@
 # FuelCalculator
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `fuel_calculator` to your list of dependencies in `mix.exs`:
+## Calculates the fuel required for a single launch or landing action and floors the result immediately.
 
 ```elixir
-def deps do
-  [
-    {:fuel_calculator, "~> 0.1.0"}
-  ]
-end
+      iex> FuelCalculator.calculate_fuel(28801, 9.807, :launch)
+      11829
+
+      iex> FuelCalculator.calculate_fuel(28801, 1.62, :land)
+      1497
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/fuel_calculator>.
+## Entry point for fuel requirement calculation.
 
+```elixir
+      iex> FuelCalculator.calculate_fuel_requirement(28801, [{:launch, "earth"}, {:land, "moon"}, {:launch, "moon"}, {:land, "earth"}])
+      {:ok, 51898}
+
+      iex> FuelCalculator.calculate_fuel_requirement(14606, [{:launch, "earth"}, {:land, "mars"}, {:launch, "mars"}, {:land, "earth"}])
+      {:ok, 33388}
+```
