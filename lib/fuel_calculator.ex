@@ -45,12 +45,15 @@ defmodule FuelCalculator do
     additional_fuel(mass, gravity, action, 0)
   end
 
-  defp additional_fuel(mass, gravity, action, added_fuel) when mass > 0 do
-    fuel = calculate_fuel(mass, gravity, action)
-    additional_fuel(fuel, gravity, action, added_fuel + fuel)
-  end
+  defp additional_fuel(mass, gravity, action, added_fuel) do
+    new_fuel = calculate_fuel(mass, gravity, action)
 
-  defp additional_fuel(_mass, _gravity, _action, added_fuel), do: added_fuel
+    if new_fuel > 0 do
+      additional_fuel(new_fuel, gravity, action, added_fuel + new_fuel)
+    else
+      added_fuel
+    end
+  end
 
   defp validate_steps(steps, gravities) do
     try do
