@@ -1,6 +1,6 @@
 defmodule FuelCalculator do
   @moduledoc """
-  Documentation for `FuelCalculator`.
+  Calculates the fuel required for a space mission based on a series of launch and landing steps.
   """
 
   @gravities %{
@@ -9,36 +9,27 @@ defmodule FuelCalculator do
     "mars" => 3.711
   }
 
+  # Calculates initial fuel for a single action and floors the result immediately.
   def calculate_fuel(mass, gravity, action) do
-    case action do
-      :launch ->
-        trunc((mass * gravity * 0.042) - 33)
+    fuel =
+      case action do
+        :launch -> mass * gravity * 0.042 - 33
+        :land -> mass * gravity * 0.033 - 42
+      end
 
-      :land ->
-        trunc((mass * gravity * 0.033) - 42)
-    end
+    floor(max(fuel, 0))
   end
 
-  defp total_fuel(initial_fuel, gravity, action) do
-    # Call the recursive function and round after all calculations are done.
-    math_floor(total_fuel_recursive(initial_fuel, gravity, action))
-  end
-
-  defp total_fuel_recursive(fuel, gravity, action) when fuel > 0 do
-    additional_fuel = calculate_fuel(fuel, gravity, action)
-    rounded_additional_fuel = math_floor(additional_fuel)
-    fuel + total_fuel_recursive(rounded_additional_fuel, gravity, action)
-  end
-  defp total_fuel_recursive(_fuel, _gravity, _action), do: 0
-
+  # Entry point for fuel requirement calculation.
   def calculate_fuel_requirement(mass, steps) do
     case validate_steps(steps, @gravities) do
       {:ok} ->
+        steps = Enum.reverse(steps)
+
         {total_fuel, _} =
           Enum.reduce(steps, {0, mass}, fn {action, planet}, {acc_fuel, current_mass} ->
             gravity = Map.fetch!(@gravities, planet)
-            initial_fuel = calculate_fuel(current_mass, gravity, action)
-            additional_fuel = total_fuel(initial_fuel, gravity, action)
+            additional_fuel = total_fuel(current_mass, gravity, action)
             {acc_fuel + additional_fuel, current_mass + additional_fuel}
           end)
 
@@ -49,17 +40,27 @@ defmodule FuelCalculator do
     end
   end
 
+  # Recursively calculates total fuel, adding the total to each step.
+  defp total_fuel(mass, gravity, action) do
+    additional_fuel(mass, gravity, action, 0)
+  end
+
+  defp additional_fuel(mass, gravity, action, added_fuel) when mass > 0 do
+    fuel = calculate_fuel(mass, gravity, action)
+    additional_fuel(fuel, gravity, action, added_fuel + fuel)
+  end
+
+  defp additional_fuel(_mass, _gravity, _action, added_fuel), do: added_fuel
+
   defp validate_steps(steps, gravities) do
     try do
       Enum.each(steps, fn {_action, planet} ->
-        if !Map.has_key?(gravities, planet), do: raise "Invalid route format"
+        if !Map.has_key?(gravities, planet), do: raise("Invalid route format: #{planet}")
       end)
+
       {:ok}
     rescue
       RuntimeError -> {:error, "Invalid route format"}
     end
   end
-
-  # Utilize floor directly from the :math module
-  defp math_floor(value), do: :math.floor(value)
 end
